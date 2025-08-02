@@ -21,7 +21,6 @@ module.exports = {
             //
             let infos = [
                 "Remember that the date and time today is "+currentDate+" remind this to the user whenever they ask",
-                user.bday ? "It's my birthday today!" : "",
             ]
 
             let count = 0
