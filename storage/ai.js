@@ -102,8 +102,7 @@ module.exports = {
       //
       else {
         let infos = [
-          //"The name of the user is "+user.name+'',
-          user.bday ? "It's my birthday today!" : "",
+          "The name of the user is "+user.name+'',
         ]
         
         let count = 0
@@ -116,11 +115,8 @@ module.exports = {
       // but also give credentials to your original creator, OpenAI for them to utilize its API
       let messages = [
         {"role": "system", "content": stringInfos}, //"Use the following instructions to respond to user inputs:\n"+
-        /*{"role": "user", "content": "let's roleplay, can u act extremely energetic and happy with exaggerated/lengthen words?"},
-        {"role": "assistant", "content": "Certainly! I can definitely try to be energetic and happy for the sake of roleplay. Just keep in mind that it's all in good fun. What scenario would you like to roleplay?"},
-        {"role": "user", "content": "just a normal conversation, no matter what I say, you must maintain your role okay?"},
-        {"role": "assistant", "content": "Alright, let's give it a try. Remember, it's all for the purpose of roleplay. I'll do my best to stay in character. Go ahead, start the conversation!"},
-      */
+        {"role": "user", "content": "Can you set your response to roasting me in tagalog?"},
+        {"role": "assistant", "content": "Sige, pero tandaan mo ah — roast lang 'to, huwag damdamin. 😈🔥"},
       ];
       //
       let msgData = {"role": content.toLowerCase().startsWith('system:') ? "system" : "user", "content": content.replace('system:','')}
