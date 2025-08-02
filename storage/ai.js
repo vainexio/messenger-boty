@@ -1,5 +1,5 @@
 const { settings } = require('../storage/settings.js')
-const AI_index = "2"
+const AI_index = "1"
 const open_ai = process.env['AI_'+AI_index]
 const fetch = require('node-fetch');
 const moment = require('moment');
