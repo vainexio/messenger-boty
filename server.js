@@ -75,7 +75,6 @@ async function loadStuff() {
 
 loadStuff()
 
-
 //FB Botting
 async function start(acc) {
   //Login event
@@ -85,13 +84,13 @@ async function start(acc) {
     //Variables
     acc.logins++
     let count = acc.logins
-    api.setOptions({listenEvents: true, forceLogin: true}); //, 
+    api.setOptions({listenEvents: true}); //, forceLogin: true
     //Logs
     if (acc.logins === 1) console.log('Logged in as '+acc.name)
     else api.sendMessage('Logged in as '+acc.name+' ('+acc.logins+')',settings.channels.test)
     
     //Message event
-    let listenEmitter = api.listen(async (err, event) => {
+    let listenEmitter = api.listenMqtt(async (err, event) => {
       //Close connection on error
       if (err) {
         if (typeof err === 'string' && err.includes('Connection closed.')) {
@@ -415,174 +414,6 @@ async function start(acc) {
       }
       //
     });
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    let ready = true
-    const interval1 = setInterval(async function() {
-      if (count !== acc.logins) clearInterval(interval1);
-      //Reminder
-      if (!todoModel) return;
-      let models = await todoModel.find()
-      //REMINDER
-      for (let i in models) {
-        let model = models[i]
-        let time = getTime2(new Date().getTime())
-        let half = getTime2(model.fixedTime+(model.ms/2))
-        let percentage = getTime2(model.fixedTime+(95*model.ms)/100)
-        //Send reminder
-        if (time >= half && model.bot === acc.name) {
-          //If reached half
-          
-          //if passed duration
-          if (model.notices === 0 && time >= model.duration) {
-            let user = await api.getUserInfo(model.author)
-            if (user) {
-              let msg = {
-                body: "🔔 @Reminder "+model.desc, //user[model.author].name
-                mentions: []
-              }
-              let thread = await api.getThreadInfo(model.message)
-              if (thread.isGroup) {
-                for (let i in thread.participantIDs) {
-                  let id = thread.participantIDs[i]
-                  msg.mentions.push({
-                  tag: '@Reminder',
-                  id: id,
-                  fromIndex: 0,
-                })
-                }
-              } else {
-                msg.mentions.push({
-                  tag: '@Reminder',
-                  id: model.author,
-                  fromIndex: 0,
-                })
-              }
-              model.notices++;
-              await model.save();
-              api.sendMessage(msg,model.message);
-              await todoModel.deleteOne({id: model.id});
-            }
-          }
-        }
-      }
-      //END REMINDER
-      //Get time//
-      let date = new Date().toLocaleString("en-US", { timeZone: 'Asia/Shanghai' });
-      let today = new Date(date);
-      let hours = (today.getHours() % 12) || 12;
-      let dayCount = today.getDay();
-      //if (dayCount === 0 || dayCount === 6) return;
-      let days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday']
-      let day = days[dayCount]
-      let state = today.getHours() >= 12 ? 'PM' : 'AM'
-      let time = hours +":"+today.getMinutes()+' '+state;
-      
-      let schedules = [
-        {
-          day: 'monday',
-          tasks: [
-            { remindIn: '8:30 AM', type: 1, title: '𝗖𝗢𝗡𝗪𝗢𝗥𝗟𝗗', text: 'Starts at 9:00 AM', prof: 'Dayielle Menchie C. Fidel', loc: 'V-Dynmc 2'},
-            { remindIn: '12:30 PM', type: 1, title: '𝗜𝗧 𝗖𝗢𝗡𝗖𝗘𝗣𝗧𝗦', text: 'Starts at 1:00 PM', prof: 'Dominique M. Azarraga', loc: 'CCS-E01'},
-            { remindIn: '2:30 PM', type: 1, title: '𝗔𝗥𝗧 𝗔𝗣𝗣𝗥𝗘𝗖𝗜𝗔𝗧𝗜𝗢𝗡', text: 'Starts at 3:00 PM', prof: 'Aerhiel D. Ban-O', loc: 'V-402'},
-          ],
-        },
-        {
-          day: 'thursday',
-          tasks: [
-            { remindIn: '8:30 AM', type: 2, title: '𝗖𝗢𝗡𝗪𝗢𝗥𝗟𝗗', text: 'Starts at 9:00 AM', prof: 'Dayielle Menchie C. Fidel', loc: 'Dynmc 2'},
-            { remindIn: '12:30 PM', type: 2, title: '𝗜𝗧 𝗖𝗢𝗡𝗖𝗘𝗣𝗧𝗦', text: 'Starts at 1:00 PM', prof: 'Dominique M. Azarraga', loc: 'CCS-E01'},
-            { remindIn: '2:30 PM', type: 2, title: '𝗔𝗥𝗧 𝗔𝗣𝗣𝗥𝗘𝗖𝗜𝗔𝗧𝗜𝗢𝗡', text: 'Starts at 3:00 PM', prof: 'Aerhiel D. Ban-O', loc: 'HSSH-402'},
-          ],
-        },
-        //
-        {
-          day: 'tuesday',
-          tasks: [
-            { remindIn: '6:30 AM', type: 1, title: '𝗡𝗦𝗧𝗣', text: 'Starts at 7:00 AM', prof: 'Alathea S. Jimenez', loc: 'V-401'},
-            { remindIn: '8:30 AM', type: 1, title: '𝗠𝗠𝗪', text: 'Starts at 9:00 AM', prof: 'Leona Lisa D. De Jesus', loc: 'V-Dynmc 1'},
-            { remindIn: '12:30 PM', type: 1, title: '𝗔𝗣𝗣𝗟𝗜𝗘𝗗 𝗣𝗥𝗢𝗝𝗘𝗖𝗧 𝟭', text: 'Starts at 1:00 PM', prof: 'Daniel Ivonh M. Ingco', loc: 'V-202'},
-            { remindIn: '2:30 PM', type: 1, title: '𝗜𝗡𝗧𝗖𝗢𝗠𝗣', text: 'Starts at 3:00 PM', prof: 'Abigail T. Velasco', loc: 'VComLab-3'},
-          ],
-        },
-        {
-          day: 'friday',
-          tasks: [
-            { remindIn: '6:30 AM', type: 2, title: '𝗡𝗦𝗧𝗣', text: 'Starts at 7:00 AM', prof: 'Alathea S. Jimenez', loc: 'HSSH-401'},
-            { remindIn: '8:30 AM', type: 2, title: '𝗠𝗠𝗪', text: 'Starts at 9:00 AM', prof: 'Leona Lisa D. De Jesus', loc: 'Dynmc 1'},
-            { remindIn: '12:30 PM', type: 2, title: '𝗔𝗣𝗣𝗟𝗜𝗘𝗗 𝗣𝗥𝗢𝗝𝗘𝗖𝗧 𝟭', text: 'Starts at 1:00 PM', prof: 'Daniel Ivonh M. Ingco', loc: 'HSSH-202'},
-            { remindIn: '2:30 PM', type: 2, title: '𝗜𝗡𝗧𝗖𝗢𝗠𝗣', text: 'Starts at 3:00 PM', prof: 'Abigail T. Velasco', loc: 'ComLab 3'},
-          ],
-        },
-      ]
-      //Get info
-      if (ready) {
-        let currentSched = schedules.find(s => s.day === day)
-        if (currentSched) {
-          let sched = currentSched.tasks.find(t => t.remindIn == time)
-          if (sched) {
-            console.log(sched)
-            ready = false
-            let state = sched.type === 1 ? '🟢 Online' : sched.type === 2 ? '🟠 FTF' : 'Unknown'
-            let message = '🔔 '+sched.title+'\n\n'+sched.text+'\n'+state+' at '+sched.loc+'\n'+sched.prof
-            api.sendMessage(message,settings.channels.test)
-          }
-        }
-        if (!ready) {
-          setTimeout(function() {
-            ready = true;
-          },60000)
-        }
-      }
-  
-    },5000)
-    
-    //
-    const interval2 = setInterval(async function() {
-      if (count !== acc.logins) clearInterval(interval2);
-      //Accept pending threads
-      let threads = await api.getThreadList(10, null, ["PENDING"])
-      //console.log('Pending threads: '+threads.length)
-      if (threads.length > 0) {
-        let stringThread  = ""
-        for (let i = 0; i < threads.length; i++) {
-          let thread = threads[i]
-          let id = thread.threadID
-          await api.handleMessageRequest(id, true)
-          api.sendMessage(settings.acceptMessage,id)
-          if (!thread.isGroup) {
-            let user = thread.userInfo.find(u => u.id !== acc.id) 
-            if (user) {
-              stringThread += '👤 '+user.name+' - '+id+'\n\n'
-              console.log('PM thread: '+user.name+' - '+id)
-            }
-          } else {
-            stringThread += '👥 '+thread.name+' - '+id+'\n\n'
-            console.log('GC thread: '+thread.name+' - '+id)
-          }
-        }
-        api.sendMessage('Accepted '+threads.length+' threads.\n\n'+stringThread,settings.channels.test)
-      }
-    },600000) //
-    //
   });
   //End login event
 }
@@ -597,93 +428,7 @@ for (let i in settings.users) {
 }
 if (!oneUserEnabled) console.log('❌ No bots enabled')
 
-let attendance = []
-app.use(body_parser.json()).get('/chatbot', async (req,res) => {
-  let text = req.query.text
-  let user = {id: req.query.id}
-  let type = req.query.type
-  if (type !== 'chat' && type !== 'image') return res.status(404).send({status: 404, error: "Invalid query type"})
-  if (!text || text.length === 0) return res.status(404).send({status: 404, error: "No message content was found"})
-  if (!req.query.id) return res.status(404).send({status: 404, error: "Invalid ID"})
-  let data = await AI.chatAI(text,type,user,settings.users[0])
-  if (data.response.error) {
-    return res.status(404).send({status: 404, error: data.response.error.message});
-  } else {
-    if (data.type === 'image') {
-      let url = data.response.data[0].url
-      return res.status(200).send({status: 200, body: url});
-    } else {
-      let msg = data.response.choices[0].message
-      console.log(msg.content)
-      let found = settings.AI.users.find(u => u.id === user.id)
-      if (found) {
-        found.messages.push(msg)
-        if (data.response.usage.total_tokens >= settings.AI.maxTokens) found.messages = []
-      }              
-      let filtered = settings.AI.filter(msg.content,settings.users[0])
-      let textContent = filtered.replace(/<\/?[^>]+(>|$)/g, '');
-      let linkRegex = /https:\/\/(media\.discordapp\.net|cdn\.discordapp\.com)\/[^\s,)]+/g;
-      let links = textContent.match(linkRegex);
-      let args = await methods.getArgs(filtered)
-      
-      if (!links) return res.status(200).send({status: 200, body: filtered, attachments: null});
-      let attachments = []
-      for (let i in links) {
-        let link = links[i]
-        let found = args.find(a => a.includes(link))
-        if (found) filtered = filtered.replace(found,'𝙎𝙚𝙚 𝘼𝙩𝙩𝙖𝙘𝙝𝙢𝙚𝙣𝙩')
-        attachments.push(link)
-      }
-      res.status(200).send({status: 200, body: filtered, attachments: attachments})
-    }
-  }
-  //.sendFile(__dirname+ '/hi.html');
-})
 app.use(cors())
-app.post('/chatbot2', async (req,res) => {
-  console.log('received',req.body)
-  
-   let text = req.body?.text
-   let user = {id: req.body?.id}
-   let type = req.body?.type
-  if (type !== 'chat' && type !== 'image') return res.status(404).json({status: 404, error: "Invalid query type"})
-  if (!text || text.length === 0) return res.status(404).send({status: 404, error: "No message content was found"})
-  if (!req.body.id) return res.status(404).send({status: 404, error: "Invalid ID"})
-  let data = await AI.chatAI(text,type,user,settings.users[0])
-  if (data.response.error) {
-    return res.status(404).send({status: 404, error: data.response.error.message});
-  } else {
-    if (data.type === 'image') {
-      let url = data.response.data[0].url
-      return res.status(200).send({status: 200, body: 'Generated Image', attachments: [url]});
-    } else {
-      let msg = data.response.choices[0].message
-      console.log(msg.content)
-      let found = settings.AI.users.find(u => u.id === user.id)
-      if (found) {
-        found.messages.push(msg)
-        if (data.response.usage.total_tokens >= settings.AI.maxTokens) found.messages = []
-      }              
-      let filtered = settings.AI.filter(msg.content,settings.users[0])
-      let textContent = filtered.replace(/<\/?[^>]+(>|$)/g, '');
-      let linkRegex = /https:\/\/(media\.discordapp\.net|cdn\.discordapp\.com)\/[^\s,)]+/g;
-      let links = textContent.match(linkRegex);
-      let args = await methods.getArgs(filtered)
-      
-      if (!links) return res.status(200).send({status: 200, body: filtered, attachments: null});
-      let attachments = []
-      for (let i in links) {
-        let link = links[i]
-        let found = args.find(a => a.includes(link))
-        if (found) filtered = filtered.replace(found,'𝙎𝙚𝙚 𝘼𝙩𝙩𝙖𝙘𝙝𝙢𝙚𝙣𝙩')
-        attachments.push(link)
-      }
-      res.status(200).send({status: 200, body: filtered, attachments: attachments})
-      
-    }
-  }
-  //.sendFile(__dirname+ '/hi.html');
-})
 //END FB BOTTING
 process.on('unhandledRejection', async error => {
   console.error(error);
