@@ -10,6 +10,9 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "fca-unofficial": "^7.2.3",
+    "https": "^1.0.0",
+    "moment": "^2.29.4",
     "express": "^4.19.2",
     "node-fetch": "^2.6.7",
     "mongoose": "^7.0.3",
