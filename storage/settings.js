@@ -10,7 +10,7 @@ module.exports = {
   settings: {
     firstTime: [], //9677784418962608
     birthdays: [],
-    acceptMessage: 'Thread accepted. You can now interact with me 💖\n\n[ 𝐓𝐇𝐈𝐍𝐆𝐒 𝐘𝐎𝐔 𝐂𝐀𝐍 𝐃𝐎 ]\n\n❓Converse with me just like how u would talk to an AI.\n❓Ask questions about NU Laguna or NU in general.\n❓Talk to other users anonymously by typing /userphone in our PM or GC.\n❓Play games! I am capable of playing logical games throughout our conversation, such as: Rock-Paper-Scissors, Tic-Tac-Toe, Guess Who, Hangman, Word Ladder and more!\n❓Set reminders! You can instruct me to notify you on a given duration by typing /remind.\n\n📑 [ 𝐑𝐔𝐋𝐄𝐒 ]\n— Failure to follow the rules will result in a non-appealable block.\n1. Do not spam your messages.\n2. Avoid harassing the other party in /userphone.\n3. Avoid using profanity and use common sense.\n\n— You can start the conversation by simply saying, hi!\n— or type "𝘴𝘩𝘰𝘸 𝘮𝘦 𝘢 𝘱𝘪𝘤𝘵𝘶𝘳𝘦 𝘰𝘧 𝘵𝘩𝘦 𝘤𝘢𝘯𝘵𝘦𝘦𝘯" for starters.',
+    acceptMessage: 'Thread accepted. You can now interact with me!',
     stickers: {
       registered: [],
       randoms: [
@@ -82,8 +82,8 @@ module.exports = {
       }
     },
     presave: [
-      { run: true, trigger: ['kiss'], response: ["If you gave me a chance, I would take it"]},
-      //{ run: true, trigger: ['prof','dean'], response: ["ikaw",'aso ko','di q alam','ha']}
+      //{ run: true, trigger: ['kiss'], response: ["If you gave me a chance, I would take it"]},
+      { run: true, trigger: ['prof','dean'], response: ["ikaw",'aso ko','di q alam','ha']}
     ],
     developers: [
       '100050989909561', //nex
@@ -99,52 +99,33 @@ module.exports = {
     messages: [],
     //
     commands: [
-      { name: 'accept.threads' },
-      { name: 'threads' },
-      { name: 'test' },
-      { name: 'remind' },
       { name: 'userphone' },
       { name: 'disconnect' },
-      { name: 'add' },
-      { name: 'reset' },
-      { name: 'addall' },
     ],
     users: [
       {
-        name: 'NUVIA',
-        file: 'nutatanongmo',
-        id: '100065140674032', //61550515301866
+        name: 'Boty',
+        file: 'account-state',
+        id: '100065140674032',
         logins: 0,
         enabled: true,
         chatbot: true,
         unsentLogger: {
           enabled: true,
-          sendToThread: false,
+          sendToThread: true,
         },
         userphones: [],
-      },
-      {
-        name: 'ian',
-        file: 'ian',
-        id: '0',
-        logins: 0,
-        enabled: false,
-        chatbot: true,
-        unsentLogger: {
-          enabled: true,
-          sendToThread: true,
-        }
       },
     ],
     //AI
     AI: {
-      maxTokens: 4000,//,
+      maxTokens: 4000,
       maintenance: {
         enabled: false,
         day: 'Thursday',
         until: 12,
         state: 'AM',
-        desc: 'aaaaa',
+        desc: 'Bug fixes',
       },
       modelCount: 0,
       users: [],
@@ -162,10 +143,7 @@ module.exports = {
     chatAPI: 'https://api.openai.com/v1/chat/completions',
     imageAPI: 'https://api.openai.com/v1/images/generations',
     models: [
-      'gpt-3.5-turbo-1106',
-      'gpt-3.5-turbo',
-      'gpt-3.5-turbo-0613',
-      'gpt-3.5-turbo-16k-0613',
+      'gpt-4.1-nano',
     ]//  
   },
   }
