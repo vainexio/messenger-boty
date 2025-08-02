@@ -10,7 +10,7 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "fca-unofficial": "^7.2.3",
+    "fca-unofficial": "^1.3.10",
     "https": "^1.0.0",
     "moment": "^2.29.4",
     "express": "^4.19.2",
