@@ -177,7 +177,7 @@ async function start(acc) {
               return;
             }
             
-            let data = await AI.chatAI(event.body.toLowerCase().replace(/image:|@Nicholas Jace Travious/g,''),event.body.toLowerCase().includes('image:') ? 'image' : 'chat',message.author,acc)
+            let data = await AI.chatAI(event.body.toLowerCase().replace(/image:|@nicholas jace travious/g,''),event.body.toLowerCase().includes('image:') ? 'image' : 'chat',message.author,acc)
             !data.response.choices ? console.log(data) : null
             let firstTime = !settings.firstTime.find(f => f === event.threadID)
             if (firstTime) {
