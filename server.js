@@ -18,10 +18,6 @@ mongoose.set('strictQuery', false);
 const mongooseToken = process.env.MONGOOSE;
 
 app.use(express.json());
-//
-let DTM_User = null;
-let todoSchema = null;
-let todoModel = null;
 
 let convoSchema = null;
 let convoModel = null
@@ -58,19 +54,6 @@ async function loadStuff() {
   ]
   model.conversationFlow = convo
   //await model.save();
-  //Todo
-  todoSchema = new mongoose.Schema({
-    id: Number,
-    author: String,
-    desc: String,
-    duration: Number,
-    notices: Number,
-    ms: Number,
-    fixedTime: Number,
-    message: String,
-    bot: String,
-  })
-  todoModel = mongoose.model("Todo_Model4",todoSchema)
 }
 
 loadStuff()
@@ -84,7 +67,7 @@ async function start(acc) {
     //Variables
     acc.logins++
     let count = acc.logins
-    api.setOptions({listenEvents: true}); //, forceLogin: true
+    api.setOptions({listenEvents: true});
     //Logs
     if (acc.logins === 1) console.log('Logged in as '+acc.name)
     else api.sendMessage('Logged in as '+acc.name+' ('+acc.logins+')',settings.channels.test)
@@ -123,114 +106,9 @@ async function start(acc) {
         let foundPhone = acc.userphones.find(p => p.threads.find(t => t === event.threadID) && p.pending === false)
         //
         let isDev = settings.developers.find(d => d === event.senderID || d === event.threadID)
-        //If birthday
-        if (message.author.bday && !settings.birthdays.find(b => b === event.senderID)) {
-          settings.birthdays.push(event.senderID)
-          api.sendMessage('🎉🎂 HAPPY BUDAYY',event.threadID,event.messageID)
-        }
         if (command) {
           //let endTyping = await api.sendTypingIndicator(message.channel.id);
-          if (command.name === 'accept.threads' && isDev) {
-            //Accept pending threads
-            let threads = await api.getThreadList(10, null, ["PENDING"])
-            console.log('Pending threads: '+threads.length)
-            if (threads.length > 0) {
-              let stringThread = '';
-              for (let i in threads) {
-                let thread = threads[i]
-                let id = thread.threadID
-                await api.handleMessageRequest(id, true)
-                api.sendMessage(settings.acceptMessage,id)
-                
-                if (!thread.isGroup) {
-                  let user = thread.userInfo.find(u => u.id !== acc.id) 
-                  if (user) {
-                    stringThread += '👤 '+user.name+' - '+id+'\n\n'
-                    console.log('PM thread: '+user.name+' - '+id)
-                  }
-                  } else {
-                    stringThread += '👥 '+thread.name+' - '+id+'\n\n'
-                    console.log('GC thread: '+thread.name+' - '+id)
-                  }
-                
-              }
-              api.sendMessage('Accepted '+threads.length+' thread(s).\n\n'+stringThread,event.threadID)
-            } else api.sendMessage("There are currently no pending threads to accept.",event.threadID)
-          } 
-          
-          else if (command.name === 'threads' && isDev) {
-            //Accept pending threads
-            let args = methods.getArgs(message.content)
-            let isCustom = !isNaN(args[1])
-            let max = isCustom ? Number(args[1]) : 100
-            let threads = await api.getThreadList(max, null, ["INBOX"])
-            console.log('Total threads: '+threads.length)
-            if (threads.length > 0) {
-              let stringThread = '';
-              for (let i in threads) {
-                let thread = threads[i]
-                
-                let id = thread.threadID
-                if (!thread.isGroup) {
-                  let user = thread.userInfo.find(u => u.id !== acc.id) 
-                  if (user) {
-                    isCustom ? stringThread = '👤 '+user.name+' - '+id+'\n\n'
-                    : stringThread += '👤 '+user.name+' - '+id+'\n\n'
-                  }
-                  } else {
-                    isCustom ? stringThread = '👥 '+thread.name+' - '+id+'\n\n'
-                    : stringThread += '👥 '+thread.name+' - '+id+'\n\n'
-                  }
-                
-              }
-              api.sendMessage('Found '+(isCustom ? '1' : threads.length)+' thread(s).\n\n'+stringThread,event.threadID)
-            } else api.sendMessage("No threads found.",event.threadID)
-          }
-          else if (command.name === 'reset' && isDev) {
-            settings.AI.users = []
-            api.sendMessage('✅ Successfully reset all users data!',event.threadID)
-          }
-          else if (command.name === 'remind') {
-            //let message = await methods.getMessage(api, event)
-            let args = event.body.trim().split(/ +/);
-            if (!args[1]) return await api.sendMessage('Command Template\n/remind [duration] [text]\n\nExample:\n/remind 30m wake up\n\ns = seconds\nm = minutes\nh = hours\nd = days',event.threadID);
-            
-            let type = args[1].replace(/[0-9]/g, '').toLowerCase()
-            let numState = Number(args[1].replace(/d|h|m|s/g,''))
-            let stringDuration = ""
-            //Determine length
-            if (type !== 'd' && type !== 'h' && type !== 'm' && type !== 's') return api.sendMessage(' Please input an absolute length. No decimalss. (e.g. 1s, 2m, 3h, 4d)',event.threadID)
-            let deadline = numState
-            if (deadline < 10 && type === 's') return api.sendMessage('The set duration must be at least longer than 10 seconds!',event.threadID)
-            type === 'd' ? deadline = deadline*86400000 : type === 'h' ? deadline = deadline*3600000 : type === 'm' ? deadline = deadline*60000 : type === 's' ? deadline = deadline*1000 : null
-            stringDuration = type === 'd' ? args[1].replace(type,' days.') : type === 'h' ? args[1].replace(type,' hours.') : type === 'm' ? args[1].replace(type,' minutes.') : type === 's' ? args[1].replace(type,' seconds.') : null
-            console.log(numState)
-            numState === 1 ? stringDuration = stringDuration.replace('s','') : null
-            //Get time
-            let currentTime = new Date().getTime();
-            let todo = args.slice(2).join(" ");
-            let id = getRandom(1000,100000)
-            let dur = currentTime+deadline
-            let newModel = new todoModel(todoSchema)
-            newModel.id = id
-            newModel.author = event.senderID
-            newModel.desc = todo
-            newModel.duration = getTime2(dur)
-            newModel.fixedTime = currentTime
-            newModel.notices = 0
-            newModel.ms = deadline
-            newModel.message = event.threadID
-            newModel.bot = acc.name
-            
-            let msg = {
-              body: "I'll remind you of that in "+stringDuration
-            }
-            api.sendMessage(msg,event.threadID,event.messageID)
-            //api.setMessageReaction('👍',event.messageID)
-            await newModel.save()
-           
-          }
-          else if (command.name === 'userphone') {
+          if (command.name === 'userphone') {
             //let message = await methods.getMessage(api, event)
             let phone = acc.userphones.find(p => p.pending === true)
             let currentPhone = acc.userphones.find(p => p.threads.find(t => t === event.threadID))
@@ -269,39 +147,6 @@ async function start(acc) {
               }
             }
           }
-          else if (command.name === 'add') {
-            let args = methods.getArgs(event.body)
-            let id = args.slice(1).join(' ')
-            console.log(id.length,id,'lll')
-            if (id.length === 0) return api.sendMessage('Please select a valid user name or ID.',event.threadID,event.messageID)
-            let foundUser = settings.cache.users.find(u => u.name.toLowerCase() === id.toLowerCase() || id.toLowerCase().startsWith(u.firstName.toLowerCase()))
-            if (foundUser) {
-              console.log('found user')
-              api.addUserToGroup(foundUser.id,event.threadID, (err) => {
-                if (err) return api.sendMessage('⚠️ Failed to add user to the group. Unexpected error occurred',event.threadID,event.messageID)
-                api.sendMessage('✅ Successfully added user to the group.',event.threadID,event.messageID)
-              })
-            } else {
-              console.log('User not found - find via ID')
-              api.addUserToGroup(id[1],event.threadID, (err) => {
-                if (err) return api.sendMessage('⚠️ Failed to add user to the group. Unknown user name/ID.',event.threadID,event.messageID)
-                api.sendMessage('✅ Successfully added user to the group.',event.threadID,event.messageID)
-              })
-            }
-          }
-          else if (command.name === 'addall') {
-            let args = methods.getArgs(event.body)
-            let id = args.slice(1).join(' ')
-            let thread = await api.getThreadInfo(id)
-            for (let i in thread.participantIDs) {
-              await sleep(1000)
-              api.addUserToGroup(thread.participantIDs[i], event.threadID)
-            }
-          }
-          else if (command.name === 'test') {
-            let file2 = fs.createReadStream("file.jpg");
-            api.sendMessage({attachment: file2},event.threadID)
-          }
           //await endTyping();
         }
         else if (foundPhone) {
@@ -333,7 +178,6 @@ async function start(acc) {
               return;
             }
             let endTyping = await api.sendTypingIndicator(event.threadID)
-            //api.markAsRead(message.channel.id);
             
             let data = await AI.chatAI(event.body.toLowerCase().replace(/image:|@nutatanong mo/g,''),event.body.toLowerCase().includes('image:') ? 'image' : 'chat',message.author,acc)
             !data.response.choices ? console.log(data) : null
@@ -407,7 +251,7 @@ async function start(acc) {
               attachments += 'File '+(Number(i)+1)+': '+file+'\n\n'
             }
           }
-          let msg = { body: foundMsg.author.name+' unsent a message.\n\nContent:\n'+(foundMsg.content ? foundMsg.content : 'N/A')+(attachments.length > 0 ? '\n\nAttachments:\n'+attachments : ''), }
+          let msg = { body: foundMsg.author.name+' unsent a message:\n\n'+(foundMsg.content ? foundMsg.content : 'N/A')+(attachments.length > 0 ? '\n\nAttachments:\n'+attachments : ''), }
           let thread = acc.unsentLogger.sendToThread ? event.threadID : settings.channels.test
           if (acc.unsentLogger.enabled) api.sendMessage(msg, thread);
         }
