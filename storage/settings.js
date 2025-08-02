@@ -115,7 +115,7 @@ module.exports = {
         file: 'nutatanongmo',
         id: '100065140674032', //61550515301866
         logins: 0,
-        enabled: false,
+        enabled: true,
         chatbot: true,
         unsentLogger: {
           enabled: true,
