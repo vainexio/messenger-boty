@@ -106,7 +106,7 @@ module.exports = {
       {
         name: 'Boty',
         file: 'account-state',
-        id: '100065140674032',
+        id: '100076184153285',
         logins: 0,
         enabled: true,
         chatbot: true,
