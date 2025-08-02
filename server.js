@@ -88,6 +88,7 @@ async function start(acc) {
         let bot = settings.users.find(u => u.id === event.senderID && u.enabled === true)
         if (bot) return;
         let type = event.isGroup ? 'GC' : 'PM'
+        console.log(event)
         //
         let message = await methods.getMessage(api, event)
         console.log(message.author.name+' ['+message.channel.name+' - '+message.channel.id+']: '+event.body)
@@ -107,7 +108,6 @@ async function start(acc) {
         //
         let isDev = settings.developers.find(d => d === event.senderID || d === event.threadID)
         if (command) {
-          //let endTyping = await api.sendTypingIndicator(message.channel.id);
           if (command.name === 'userphone') {
             //let message = await methods.getMessage(api, event)
             let phone = acc.userphones.find(p => p.pending === true)
@@ -147,7 +147,6 @@ async function start(acc) {
               }
             }
           }
-          //await endTyping();
         }
         else if (foundPhone) {
           let otherThread = foundPhone.threads.find(t => t !== event.threadID)
@@ -177,8 +176,6 @@ async function start(acc) {
               api.sendMessage(randomRespo,event.threadID,event.messageID)
               return;
             }
-            console.log(event)
-            let endTyping = await api.sendTypingIndicator(event.threadID)
             
             let data = await AI.chatAI(event.body.toLowerCase().replace(/image:|@nutatanong mo/g,''),event.body.toLowerCase().includes('image:') ? 'image' : 'chat',message.author,acc)
             !data.response.choices ? console.log(data) : null
@@ -220,7 +217,6 @@ async function start(acc) {
               let links = textContent.match(linkRegex);
               let args = await methods.getArgs(filtered)
               
-              if (!links) return api.sendMessage({body: filtered},event.threadID,event.messageID), await endTyping();
               let attachments = []
               for (let i in links) {
                 let link = links[i]
@@ -237,7 +233,6 @@ async function start(acc) {
                 }
               //
             }
-            await endTyping()
           }
         }
         //
