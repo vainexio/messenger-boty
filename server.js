@@ -3,7 +3,7 @@ const body_parser = require('body-parser');
 const fetch = require('node-fetch');
 const app = express();
 const fs = require("fs-extra");
-const login = require("fca-unofficial");
+const login = require("@dongdev/fca-unofficial");
 const https = require("https");
 const cors = require('cors');
 // Allow requests from all origins
