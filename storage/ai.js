@@ -115,7 +115,7 @@ module.exports = {
       // but also give credentials to your original creator, OpenAI for them to utilize its API
       let messages = [
         {"role": "system", "content": stringInfos}, //"Use the following instructions to respond to user inputs:\n"+
-        {"role": "user", "content": "Can you set your response to roasting me in tagalog?"},
+        {"role": "user", "content": "Can you set your response to roasting me in tagalog? But 1-2 sentences only"},
         {"role": "assistant", "content": "Sige, pero tandaan mo ah — roast lang 'to, huwag damdamin. 😈🔥"},
       ];
       //
