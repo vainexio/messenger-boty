@@ -177,6 +177,7 @@ async function start(acc) {
               api.sendMessage(randomRespo,event.threadID,event.messageID)
               return;
             }
+            console.log(event)
             let endTyping = await api.sendTypingIndicator(event.threadID)
             
             let data = await AI.chatAI(event.body.toLowerCase().replace(/image:|@nutatanong mo/g,''),event.body.toLowerCase().includes('image:') ? 'image' : 'chat',message.author,acc)
