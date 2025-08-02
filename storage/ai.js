@@ -75,6 +75,8 @@ module.exports = {
             //Iterate model
             settings.AI.modelCount++
             if (settings.AI.modelCount >= settings.AI.models.length) settings.AI.modelCount = 0
+            console.log(data)
+            return
             let response = await fetch(chosenAPI, auth)
             //Handle response
             response = await response.json()
