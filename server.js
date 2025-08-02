@@ -217,6 +217,7 @@ async function start(acc) {
               let links = textContent.match(linkRegex);
               let args = await methods.getArgs(filtered)
               
+              if (!links) return api.sendMessage({body: filtered},event.threadID,event.messageID);
               let attachments = []
               for (let i in links) {
                 let link = links[i]
