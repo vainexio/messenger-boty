@@ -6,9 +6,6 @@ const fs = require("fs-extra");
 const login = require("@dongdev/fca-unofficial");
 const https = require("https");
 const cors = require('cors');
-// Allow requests from all origins
-
-
 const { AI } = require('./storage/ai.js')
 const { settings } = require('./storage/settings.js')
 const { getRandom, getTime, getTime2, sleep, send } = require('./storage/wrap.js')
@@ -16,47 +13,102 @@ const { methods } = require('./storage/method.js')
 const mongoose = require('mongoose');
 mongoose.set('strictQuery', false);
 const mongooseToken = process.env.MONGOOSE;
-
 app.use(express.json());
 
-let convoSchema = null;
-let convoModel = null
-//SETTINGS
-let messages = []
 //Listen
 let listener = app.listen(process.env.PORT, function() {
    console.log('Not that it matters but your app is listening on port ' + listener.address().port);
 });
-//
+
+// Define your weekly class schedule
+const classSchedule = [
+  // TELECOMMUNICATIONS & VOIP (COMPVOIP)
+  { day: 'Tuesday',   subject: 'Telecommunications & VOIP', section: 'BSIT231C', start: '13:00', end: '15:00', professor: 'Abigail T. Velasco' },
+  { day: 'Friday',    subject: 'Telecommunications & VOIP', section: 'BSIT231C', start: '13:00', end: '15:00', professor: 'Abigail T. Velasco' },
+
+  // ELECTIVE 2 (ELECTV2)
+  { day: 'Monday',    subject: 'Elective 2',               section: 'BSIT231C', start: '09:00', end: '11:00', professor: 'Marco Paulo J. Burgos' },
+  { day: 'Thursday',  subject: 'Elective 2',               section: 'BSIT231C', start: '09:00', end: '11:00', professor: 'Marco Paulo J. Burgos' },
+
+  // ICT SERVICES MANAGEMENT (ICTSRV1)
+  { day: 'Tuesday',   subject: 'ICT Services Management', section: 'BSIT231C', start: '09:00', end: '11:00', professor: 'Kenneth Dynielle Lawas' },
+  { day: 'Friday',    subject: 'ICT Services Management', section: 'BSIT231C', start: '15:00', end: '17:00', professor: 'Kenneth Dynielle Lawas' },
+
+  // INFORMATION SECURITY (INFOSEC)
+  { day: 'Monday',    subject: 'Information Security',     section: 'BSIT231C', start: '11:00', end: '13:00', professor: '' },
+  { day: 'Thursday',  subject: 'Information Security',     section: 'BSIT231C', start: '11:00', end: '13:00', professor: '' },
+
+  // SYSTEMS ANALYSIS & DETAILED DESIGN (MSYADD1)
+  { day: 'Wednesday', subject: 'Systems Analysis & Detailed Design', section: 'BSIT231C', start: '11:00', end: '15:00', professor: 'Edison M. Esberto' },
+
+   // TEST SCHEDULE
+   { day: 'Sunday', subject: 'Test Subject', section: 'BSIT231C', start: '21:30', end: '22:00', professor: 'Bobay' },
+];
+
+// Add an "online" flag: Mondays & Tuesdays are online, others are face-to-face
+classSchedule.forEach(entry => {
+  entry.mode = ['Monday','Tuesday'].includes(entry.day)
+    ? 'online'
+    : 'face-to-face';
+});
+
+// Map weekdays to cron day-of-week numbers
+const daysMap = {
+  Sunday: '0',
+  Monday: '1',
+  Tuesday: '2',
+  Wednesday: '3',
+  Thursday: '4',
+  Friday: '5',
+  Saturday: '6',
+};
+
+/**
+ * Schedule the 7:00 AM daily summary and 5-minute reminders for each class.
+ * Call this inside your start(acc) after login(api).
+ */
+function scheduleNotifications(api) {
+  // Daily summary at 7:00 AM
+  Object.entries(daysMap).forEach(([dayName, dayNum]) => {
+    cron.schedule(
+      `0 7 * * ${dayNum}`,
+      () => {
+        const todayClasses = classSchedule.filter(s => s.day === dayName);
+        if (!todayClasses.length) return;
+
+        let message = '📚 *Today\'s Classes* 📚\n';
+        todayClasses.forEach(s => {
+          message += `\n• *${s.subject}* with _${s.professor || 'TBA'}_\n  _${s.start} - ${s.end}_ (${s.mode})\n`;
+        });
+
+        api.sendMessage(message, settings.channels.test);
+      },
+      { timezone: 'Asia/Manila' }
+    );
+  });
+
+  // 5-minute before each class reminder
+  classSchedule.forEach(s => {
+    const [hour, minute] = s.start.split(':').map(Number);
+    const remMoment = moment.tz({ hour, minute }, 'HH:mm', 'Asia/Manila').subtract(5, 'minutes');
+    const remH = remMoment.hour();
+    const remM = remMoment.minute();
+    const dayNum = daysMap[s.day];
+
+    cron.schedule(
+      `${remM} ${remH} * * ${dayNum}`,
+      () => {
+        const reminder = `⏰ Reminder: *${s.subject}* with _${s.professor || 'TBA'}_ starts at ${s.start} (${s.mode})`;
+        api.sendMessage(reminder, settings.channels.test);
+      },
+      { timezone: 'Asia/Manila' }
+    );
+  });
+}
 
 async function loadStuff() {
   await mongoose.connect(mongooseToken,{keepAlive: true});
-  convoSchema = new mongoose.Schema({
-    uuid: String, //Universally Unique Identifiers
-    conversationFlow: [
-      {
-        role: String, //System, Assistant, User
-        content: String, //Message
-      }
-    ]
-  })
-  convoModel = mongoose.model("Conversation_Model",convoSchema)
-  let model = new convoModel(convoSchema)
-  model.uuid = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
-  let convo = [
-    {role: 'System', content: 'You are a helpful assistant.'},
-    {role: 'User', content: 'Hi'},
-    {role: 'Assistant', content: 'Hello! How can I assist you today?'},
-    {role: 'User', content: "What's 1+1?"},
-    {role: 'Assistant', content: "The sum of 1 + 1 is 2."},
-    {role: 'User', content: "Are you sure?"},
-    {role: 'Assistant', content: "Yes, I'm sure. The arithmetic sum of 1 + 1 is 2. If you have a different context or if you have a specific question related to this, feel free to provide more details!"},
-  ]
-  model.conversationFlow = convo
-  //await model.save();
 }
-
-loadStuff()
 
 //FB Botting
 async function start(acc) {
@@ -68,6 +120,7 @@ async function start(acc) {
     acc.logins++
     let count = acc.logins
     api.setOptions({listenEvents: true});
+    scheduleNotifications(api);
     //Logs
     if (acc.logins === 1) console.log('Logged in as '+acc.name)
     else api.sendMessage('Logged in as '+acc.name+' ('+acc.logins+')',settings.channels.test)
@@ -97,67 +150,9 @@ async function start(acc) {
         
         let hasPing = false
         event.mentions[acc.id] ? hasPing = true : event.type === 'message_reply' && event.messageReply.senderID === acc.id ? hasPing = true : event.body.toLowerCase().includes(acc.name) ? hasPing = true : null
-        //Handle
-        let command = methods.getCommand(event.body)
-        let typing = false
-        let reactions = ['😍','😆','😮','😢','😠']
-        let randomReact = reactions[getRandom(0,reactions.length)]
-        if (acc.name === 'Test') await api.setMessageReaction(randomReact,event.messageID)
-        //Userphone Events
-        let foundPhone = acc.userphones.find(p => p.threads.find(t => t === event.threadID) && p.pending === false)
         //
         let isDev = settings.developers.find(d => d === event.senderID || d === event.threadID)
-        if (command) {
-          if (command.name === 'userphone') {
-            //let message = await methods.getMessage(api, event)
-            let phone = acc.userphones.find(p => p.pending === true)
-            let currentPhone = acc.userphones.find(p => p.threads.find(t => t === event.threadID))
-            if (currentPhone) return api.sendMessage("⭕ You are currently in a call. Please /disconnect first before initiating another call!",event.threadID)
-            if (phone) {
-              phone.pending = false
-              phone.threads.push(event.threadID)
-              api.sendMessage("📞 You picked up someone's call! Say hi!",event.threadID)
-              api.sendMessage('📞 Someone picked up your call! Say hello!',phone.threads[0])
-            } else {
-              let data = {
-                pending: true,
-                threads: [ event.threadID ],
-                author: event.userID,
-              }
-              acc.userphones.push(data)
-              api.sendMessage('☎️ Waiting for someone to pickup the call...\nType /disconnect if you wish to end the call',event.threadID)
-            }
-          }
-          else if (command.name === 'disconnect') {
-            if (acc.userphones.length === 0) return api.sendMessage("⭕ You don't have an existing call right now.",event.threadID);
-            for (let i in acc.userphones) {
-              let phone = acc.userphones[i]
-              if (phone.threads.find(t => t === event.threadID)) {
-                if (phone) {
-                  let otherThread = phone.threads.find(t => t !== event.threadID)
-                  api.sendMessage("📵 You hung up the phone.",event.threadID)
-                  otherThread ? api.sendMessage("📵 The other party hung up the phone :c\nType /userphone again to start another call!",otherThread) : null
-                  acc.userphones.splice(i,1)
-                } else {
-                  api.sendMessage("⭕ You're not in a call right now. Type /userphone to start an anonymous call!",event.threadID)
-                }
-              }
-              else if (i == acc.userphones.length-1) {
-                api.sendMessage("⭕ You don't have an existing call right now.",event.threadID)
-              }
-            }
-          }
-        }
-        else if (foundPhone) {
-          let otherThread = foundPhone.threads.find(t => t !== event.threadID)
-          if (otherThread) {
-            api.sendMessage('👤: '+event.body,otherThread)
-            api.markAsRead(event.threadID)
-          }
-          else api.sendMessage('It seems like the other party hung up the phone..',event.threadID)
-          return;
-        }
-        else if (hasPing || type === 'PM') {
+        if (hasPing || type === 'PM') {
           if (event.body.length > 0) {
             if (settings.AI.maintenance.enabled) {
               let mn = settings.AI.maintenance
