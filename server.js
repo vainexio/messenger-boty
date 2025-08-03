@@ -1,73 +1,58 @@
-const express = require('express');
-const body_parser = require('body-parser');
-const fetch = require('node-fetch');
-const app = express();
-const fs = require("fs-extra");
 const login = require("@dongdev/fca-unofficial");
+const body_parser = require('body-parser');
+const moment = require('moment-timezone');
+const mongoose = require('mongoose');
+const fetch = require('node-fetch');
+const express = require('express');
+const cron = require('node-cron');
+const fs = require("fs-extra");
 const https = require("https");
 const cors = require('cors');
-// Allow requests from all origins
+const app = express();
 
-const { AI } = require('./storage/ai.js')
-const { settings } = require('./storage/settings.js')
-const { getRandom, getTime, getTime2, sleep, send } = require('./storage/wrap.js')
-const { methods } = require('./storage/method.js')
-const mongoose = require('mongoose');
+const { getRandom, getTime, getTime2, sleep, send } = require('./storage/wrap.js');
+const { settings } = require('./storage/settings.js');
+const { methods } = require('./storage/method.js');
+const { AI } = require('./storage/ai.js');
+
+app.use(express.json());
 mongoose.set('strictQuery', false);
 const mongooseToken = process.env.MONGOOSE;
 
-app.use(express.json());
-
-//Listen
+// Listen
 let listener = app.listen(process.env.PORT, function() {
-   console.log('Not that it matters but your app is listening on port ' + listener.address().port);
+  console.log('Bot listening on port ' + listener.address().port);
 });
-const cron = require('node-cron');
-const moment = require('moment-timezone');
 
-// Define your weekly class schedule
 const classSchedule = [
-  // TELECOMMUNICATIONS & VOIP (COMPVOIP)
   { day: 'Tuesday', subject: 'Telecommunications & VOIP', section: 'BSIT231C', start: '13:00', end: '15:00', professor: 'Abigail T. Velasco' },
   { day: 'Friday', subject: 'Telecommunications & VOIP', section: 'BSIT231C', start: '13:00', end: '15:00', professor: 'Abigail T. Velasco' },
-
-  // ELECTIVE 2 (ELECTV2)
   { day: 'Monday', subject: 'Elective 2', section: 'BSIT231C', start: '09:00', end: '11:00', professor: 'Marco Paulo J. Burgos' },
   { day: 'Thursday', subject: 'Elective 2', section: 'BSIT231C', start: '09:00', end: '11:00', professor: 'Marco Paulo J. Burgos' },
-
-  // ICT SERVICES MANAGEMENT (ICTSRV1)
   { day: 'Tuesday', subject: 'ICT Services Management', section: 'BSIT231C', start: '09:00', end: '11:00', professor: 'Kenneth Dynielle Lawas' },
   { day: 'Friday', subject: 'ICT Services Management', section: 'BSIT231C', start: '15:00', end: '17:00', professor: 'Kenneth Dynielle Lawas' },
-
-  // INFORMATION SECURITY (INFOSEC)
-  { day: 'Monday', subject: 'Information Security', section: 'BSIT231C', start: '11:00', end: '13:00', professor: '' },
-  { day: 'Thursday', subject: 'Information Security', section: 'BSIT231C', start: '11:00', end: '13:00', professor: '' },
-
-  // SYSTEMS ANALYSIS & DETAILED DESIGN (MSYADD1)
+  { day: 'Monday', subject: 'Information Security', section: 'BSIT231C', start: '11:00', end: '13:00', professor: 'TBA' },
+  { day: 'Thursday', subject: 'Information Security', section: 'BSIT231C', start: '11:00', end: '13:00', professor: 'TBA' },
   { day: 'Wednesday', subject: 'Systems Analysis & Detailed Design', section: 'BSIT231C', start: '11:00', end: '15:00', professor: 'Edison M. Esberto' },
-  { day: 'Sunday', subject: 'Systems Analysis & Detailed Design', section: 'BSIT231C', start: '21:52', end: '15:00', professor: 'Edison M. Esberto' },
 ];
 
-classSchedule.forEach(entry => {
-  entry.mode = ['Monday', 'Tuesday'].includes(entry.day) ? 'online' : 'face-to-face';
-});
-
-// Map weekdays to cron day-of-week numbers
+classSchedule.forEach(entry => { entry.mode = ['Monday', 'Tuesday'].includes(entry.day) ? 'online' : 'face-to-face' });
 const daysMap = { Sunday: '0', Monday: '1', Tuesday: '2', Wednesday: '3', Thursday: '4', Friday: '5', Saturday: '6' };
 
-/**
- * Schedule the 7:00 AM daily summary and 5-minute reminders for each class.
- */
 function scheduleNotifications(api) {
   // Daily summary at 7:00 AM
   Object.entries(daysMap).forEach(([dayName, dayNum]) => {
     cron.schedule(`0 7 * * ${dayNum}`, () => {
+      const today = moment.tz('Asia/Manila').format('dddd');
+      if (today !== dayName) return;
       const todayClasses = classSchedule.filter(s => s.day === dayName);
       if (!todayClasses.length) return;
 
       let msg = '📚 *Today\'s Classes* 📚\n';
       todayClasses.forEach(s => {
-        msg += `\n• *${s.subject}* with _${s.professor}_\n  _${s.start} - ${s.end}_ (${s.mode})\n`;
+        const start12 = moment.tz(s.start, 'HH:mm', 'Asia/Manila').format('h:mm A');
+        const end12 = moment.tz(s.end, 'HH:mm', 'Asia/Manila').format('h:mm A');
+        msg += `\n• *${s.subject}* with _${s.professor}_\n  _${start12} - ${end12}_ (${s.mode})\n`;
       });
       api.sendMessage(msg, settings.channels.test);
     }, { timezone: 'Asia/Manila' });
@@ -81,7 +66,8 @@ function scheduleNotifications(api) {
 
     if (Number.isInteger(h) && Number.isInteger(m)) {
       cron.schedule(`${m} ${h} * * ${dayNum}`, () => {
-        const text = `⏰ Reminder: *${s.subject}* with _${s.professor}_ starts at ${s.start} (${s.mode})`;
+        const start12 = moment.tz(s.start, 'HH:mm', 'Asia/Manila').format('h:mm A');
+        const text = `⏰ Reminder: *${s.subject}* with _${s.professor}_ starts at ${start12} (${s.mode})`;
         api.sendMessage(text, settings.channels.test);
       }, { timezone: 'Asia/Manila' });
     }
@@ -93,14 +79,15 @@ function scheduleNotifications(api) {
  */
 function backfillReminders(api) {
   const now = moment.tz('Asia/Manila');
-  const today = now.format('dddd');
+  const todayDay = now.format('dddd');
   classSchedule
-    .filter(c => c.day === today)
+    .filter(c => c.day === todayDay)
     .forEach(c => {
       const start = moment.tz(c.start, 'HH:mm', 'Asia/Manila');
       const remTime = start.clone().subtract(5, 'minutes');
       if (now.isBetween(remTime, start)) {
-        const notice = `(Missed) ⏰ *${c.subject}* with _${c.professor}_ starts at ${c.start} (${c.mode})`;
+        const start12 = start.format('h:mm A');
+        const notice = `⏰ Reminder: *${c.subject}* with _${c.professor}_ starts at ${start12} (${c.mode})`;
         api.sendMessage(notice, settings.channels.test);
       }
     });
@@ -110,21 +97,21 @@ async function loadStuff() {
   await mongoose.connect(mongooseToken, { keepAlive: true });
 }
 
-//FB Botting
+// FB Botting
 async function start(acc) {
-  //Login event
-  login({ appState: JSON.parse(fs.readFileSync('./' + acc.file + '.json', 'utf8')) }, async (err, api) => {
-    //
-    if (err) return console.log(err.error)
-    //Variables
-    acc.logins++
-    let count = acc.logins
+  login({ appState: JSON.parse(fs.readFileSync(`./${acc.file}.json`, 'utf8')) }, async (err, api) => {
+    if (err) return console.error(err);
+    acc.logins++;
     api.setOptions({ listenEvents: true });
+
     scheduleNotifications(api);
     backfillReminders(api);
-    //Logs
-    if (acc.logins === 1) console.log('Logged in as ' + acc.name)
-    else api.sendMessage('Logged in as ' + acc.name + ' (' + acc.logins + ')', settings.channels.test)
+
+    const loginMsg = acc.logins === 1
+      ? `Logged in as ${acc.name}`
+      : `Logged in as ${acc.name} (${acc.logins})`;
+    console.log(loginMsg);
+    if (acc.logins > 1) api.sendMessage(loginMsg, settings.channels.test);
 
     //Message event
     let listenEmitter = api.listenMqtt(async (err, event) => {
@@ -252,21 +239,16 @@ async function start(acc) {
       //
     });
   });
-  //End login event
 }
-///////////
-let oneUserEnabled = false
-for (let i in settings.users) {
-  let acc = settings.users[i]
-  if (acc.enabled) {
-    start(acc)
-    oneUserEnabled = true
-  }
-}
-if (!oneUserEnabled) console.log('❌ No bots enabled')
 
-app.use(cors())
-//END FB BOTTING
-process.on('unhandledRejection', async error => {
-  console.error(error);
+let oneUserEnabled = false;
+settings.users.forEach(acc => {
+  if (acc.enabled) {
+    start(acc);
+    oneUserEnabled = true;
+  }
 });
+if (!oneUserEnabled) console.log('❌ No bots enabled');
+
+app.use(cors());
+process.on('unhandledRejection', error => console.error(error));
