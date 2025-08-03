@@ -34,6 +34,7 @@ const classSchedule = [
   { day: 'Monday', subject: 'Information Security', section: 'BSIT231C', start: '11:00', end: '13:00', professor: 'TBA' },
   { day: 'Thursday', subject: 'Information Security', section: 'BSIT231C', start: '11:00', end: '13:00', professor: 'TBA' },
   { day: 'Wednesday', subject: 'Systems Analysis & Detailed Design', section: 'BSIT231C', start: '11:00', end: '15:00', professor: 'Edison M. Esberto' },
+  { day: 'Sunday', subject: 'Joyoy', section: 'BSIT231C', start: '22:01', end: '15:00', professor: 'Nichole QOmpan' },
 ];
 
 classSchedule.forEach(entry => { entry.mode = ['Monday', 'Tuesday'].includes(entry.day) ? 'online' : 'face-to-face' });
