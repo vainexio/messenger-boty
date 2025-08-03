@@ -1,9 +1,8 @@
 const { getTime } = require('../storage/wrap.js')
 
 let channels = {
+  log: '30884126311201793',
   test: '6092122660821476',
-  bois: '3700562556620542',
-  group4: '6786445438078486',
 }
 module.exports = {
   //
