@@ -21,7 +21,6 @@ app.use(express.json());
 let listener = app.listen(process.env.PORT, function () {
   console.log('Not that it matters but your app is listening on port ' + listener.address().port);
 });
-
 // Define your weekly class schedule
 const classSchedule = [
   // TELECOMMUNICATIONS & VOIP (COMPVOIP)
@@ -42,13 +41,12 @@ const classSchedule = [
 
   // SYSTEMS ANALYSIS & DETAILED DESIGN (MSYADD1)
   { day: 'Wednesday', subject: 'Systems Analysis & Detailed Design', section: 'BSIT231C', start: '11:00', end: '15:00', professor: 'Edison M. Esberto' },
+  { day: 'Sunday', subject: 'Systems Analysis & Detailed Design', section: 'BSIT231C', start: '21:37', end: '15:00', professor: 'Edison M. Esberto' },
 ];
 
 // Add an "online" flag: Mondays & Tuesdays are online, others are face-to-face
 classSchedule.forEach(entry => {
-  entry.mode = ['Monday', 'Tuesday'].includes(entry.day)
-    ? 'online'
-    : 'face-to-face';
+  entry.mode = ['Monday', 'Tuesday'].includes(entry.day) ? 'online' : 'face-to-face';
 });
 
 // Map weekdays to cron day-of-week numbers
@@ -88,20 +86,25 @@ function scheduleNotifications(api) {
 
   // 5-minute before each class reminder
   classSchedule.forEach(s => {
-    const [hour, minute] = s.start.split(':').map(Number);
-    const remMoment = moment.tz({ hour, minute }, 'HH:mm', 'Asia/Manila').subtract(5, 'minutes');
+    // Parse the start time in Asia/Manila and subtract 5 minutes
+    const remMoment = moment.tz(s.start, 'HH:mm', 'Asia/Manila').subtract(5, 'minutes');
     const remH = remMoment.hour();
     const remM = remMoment.minute();
     const dayNum = daysMap[s.day];
 
-    cron.schedule(
-      `${remM} ${remH} * * ${dayNum}`,
-      () => {
-        const reminder = `⏰ Reminder: *${s.subject}* with _${s.professor || 'TBA'}_ starts at ${s.start} (${s.mode})`;
-        api.sendMessage(reminder, settings.channels.test);
-      },
-      { timezone: 'Asia/Manila' }
-    );
+    // Only schedule if parsing was successful
+    if (Number.isInteger(remH) && Number.isInteger(remM)) {
+      cron.schedule(
+        `${remM} ${remH} * * ${dayNum}`,
+        () => {
+          const reminder = `⏰ Reminder: *${s.subject}* with _${s.professor || 'TBA'}_ starts at ${s.start} (${s.mode})`;
+          api.sendMessage(reminder, settings.channels.test);
+        },
+        { timezone: 'Asia/Manila' }
+      );
+    } else {
+      console.error(`Failed to parse reminder time for ${s.subject} on ${s.day}`);
+    }
   });
 }
 
