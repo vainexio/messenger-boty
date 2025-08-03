@@ -142,7 +142,7 @@ module.exports = {
     chatAPI: 'https://api.openai.com/v1/chat/completions',
     imageAPI: 'https://api.openai.com/v1/images/generations',
     models: [
-      'gpt-4.1-nano',
+      'gpt-4.1-mini',
     ]//  
   },
   }
