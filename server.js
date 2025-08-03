@@ -1,26 +1,6 @@
-const express = require('express');
-const body_parser = require('body-parser');
 const cron = require('node-cron');
 const moment = require('moment-timezone');
-const fetch = require('node-fetch');
-const app = express();
-const fs = require("fs-extra");
-const login = require("@dongdev/fca-unofficial");
-const https = require("https");
-const cors = require('cors');
-const { AI } = require('./storage/ai.js')
-const { settings } = require('./storage/settings.js')
-const { getRandom, getTime, getTime2, sleep, send } = require('./storage/wrap.js')
-const { methods } = require('./storage/method.js')
-const mongoose = require('mongoose');
-mongoose.set('strictQuery', false);
-const mongooseToken = process.env.MONGOOSE;
-app.use(express.json());
 
-//Listen
-let listener = app.listen(process.env.PORT, function () {
-  console.log('Not that it matters but your app is listening on port ' + listener.address().port);
-});
 // Define your weekly class schedule
 const classSchedule = [
   // TELECOMMUNICATIONS & VOIP (COMPVOIP)
@@ -41,71 +21,65 @@ const classSchedule = [
 
   // SYSTEMS ANALYSIS & DETAILED DESIGN (MSYADD1)
   { day: 'Wednesday', subject: 'Systems Analysis & Detailed Design', section: 'BSIT231C', start: '11:00', end: '15:00', professor: 'Edison M. Esberto' },
-  { day: 'Sunday', subject: 'Systems Analysis & Detailed Design', section: 'BSIT231C', start: '21:37', end: '15:00', professor: 'Edison M. Esberto' },
+  { day: 'Sunday', subject: 'Systems Analysis & Detailed Design', section: 'BSIT231C', start: '21:40', end: '15:00', professor: 'Edison M. Esberto' },
 ];
 
-// Add an "online" flag: Mondays & Tuesdays are online, others are face-to-face
 classSchedule.forEach(entry => {
   entry.mode = ['Monday', 'Tuesday'].includes(entry.day) ? 'online' : 'face-to-face';
 });
 
 // Map weekdays to cron day-of-week numbers
-const daysMap = {
-  Sunday: '0',
-  Monday: '1',
-  Tuesday: '2',
-  Wednesday: '3',
-  Thursday: '4',
-  Friday: '5',
-  Saturday: '6',
-};
+const daysMap = { Sunday: '0', Monday: '1', Tuesday: '2', Wednesday: '3', Thursday: '4', Friday: '5', Saturday: '6' };
 
 /**
  * Schedule the 7:00 AM daily summary and 5-minute reminders for each class.
- * Call this inside your start(acc) after login(api).
  */
 function scheduleNotifications(api) {
   // Daily summary at 7:00 AM
   Object.entries(daysMap).forEach(([dayName, dayNum]) => {
-    cron.schedule(
-      `0 7 * * ${dayNum}`,
-      () => {
-        const todayClasses = classSchedule.filter(s => s.day === dayName);
-        if (!todayClasses.length) return;
+    cron.schedule(`0 7 * * ${dayNum}`, () => {
+      const todayClasses = classSchedule.filter(s => s.day === dayName);
+      if (!todayClasses.length) return;
 
-        let message = '📚 *Today\'s Classes* 📚\n';
-        todayClasses.forEach(s => {
-          message += `\n• *${s.subject}* with _${s.professor || 'TBA'}_\n  _${s.start} - ${s.end}_ (${s.mode})\n`;
-        });
-
-        api.sendMessage(message, settings.channels.test);
-      },
-      { timezone: 'Asia/Manila' }
-    );
+      let msg = '📚 *Today\'s Classes* 📚\n';
+      todayClasses.forEach(s => {
+        msg += `\n• *${s.subject}* with _${s.professor}_\n  _${s.start} - ${s.end}_ (${s.mode})\n`;
+      });
+      api.sendMessage(msg, settings.channels.test);
+    }, { timezone: 'Asia/Manila' });
   });
 
   // 5-minute before each class reminder
   classSchedule.forEach(s => {
-    // Parse the start time in Asia/Manila and subtract 5 minutes
-    const remMoment = moment.tz(s.start, 'HH:mm', 'Asia/Manila').subtract(5, 'minutes');
-    const remH = remMoment.hour();
-    const remM = remMoment.minute();
+    const rem = moment.tz(s.start, 'HH:mm', 'Asia/Manila').subtract(5, 'minutes');
+    const h = rem.hour(), m = rem.minute();
     const dayNum = daysMap[s.day];
 
-    // Only schedule if parsing was successful
-    if (Number.isInteger(remH) && Number.isInteger(remM)) {
-      cron.schedule(
-        `${remM} ${remH} * * ${dayNum}`,
-        () => {
-          const reminder = `⏰ Reminder: *${s.subject}* with _${s.professor || 'TBA'}_ starts at ${s.start} (${s.mode})`;
-          api.sendMessage(reminder, settings.channels.test);
-        },
-        { timezone: 'Asia/Manila' }
-      );
-    } else {
-      console.error(`Failed to parse reminder time for ${s.subject} on ${s.day}`);
+    if (Number.isInteger(h) && Number.isInteger(m)) {
+      cron.schedule(`${m} ${h} * * ${dayNum}`, () => {
+        const text = `⏰ Reminder: *${s.subject}* with _${s.professor}_ starts at ${s.start} (${s.mode})`;
+        api.sendMessage(text, settings.channels.test);
+      }, { timezone: 'Asia/Manila' });
     }
   });
+}
+
+/**
+ * Backfill any missed reminders when the bot starts (if within the 5-min window).
+ */
+function backfillReminders(api) {
+  const now = moment.tz('Asia/Manila');
+  const today = now.format('dddd');
+  classSchedule
+    .filter(c => c.day === today)
+    .forEach(c => {
+      const start = moment.tz(c.start, 'HH:mm', 'Asia/Manila');
+      const remTime = start.clone().subtract(5, 'minutes');
+      if (now.isBetween(remTime, start)) {
+        const notice = `(Missed) ⏰ *${c.subject}* with _${c.professor}_ starts at ${c.start} (${c.mode})`;
+        api.sendMessage(notice, settings.channels.test);
+      }
+    });
 }
 
 async function loadStuff() {
@@ -123,6 +97,7 @@ async function start(acc) {
     let count = acc.logins
     api.setOptions({ listenEvents: true });
     scheduleNotifications(api);
+    backfillReminders(api);
     //Logs
     if (acc.logins === 1) console.log('Logged in as ' + acc.name)
     else api.sendMessage('Logged in as ' + acc.name + ' (' + acc.logins + ')', settings.channels.test)
