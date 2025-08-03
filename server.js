@@ -54,7 +54,7 @@ function scheduleNotifications(api) {
         const end12 = moment.tz(s.end, 'HH:mm', 'Asia/Manila').format('h:mm A');
         msg += `\n• *${s.subject}* with _${s.professor}_\n  _${start12} - ${end12}_ (${s.mode})\n`;
       });
-      api.sendMessage(msg, settings.channels.test);
+      api.sendMessage(msg, settings.channels.log);
     }, { timezone: 'Asia/Manila' });
   });
 
@@ -68,7 +68,7 @@ function scheduleNotifications(api) {
       cron.schedule(`${m} ${h} * * ${dayNum}`, () => {
         const start12 = moment.tz(s.start, 'HH:mm', 'Asia/Manila').format('h:mm A');
         const text = `⏰ Reminder: *${s.subject}* with _${s.professor}_ starts at ${start12} (${s.mode})`;
-        api.sendMessage(text, settings.channels.test);
+        api.sendMessage(text, settings.channels.log);
       }, { timezone: 'Asia/Manila' });
     }
   });
@@ -88,7 +88,7 @@ function backfillReminders(api) {
       if (now.isBetween(remTime, start)) {
         const start12 = start.format('h:mm A');
         const notice = `⏰ Reminder: *${c.subject}* with _${c.professor}_ starts at ${start12} (${c.mode})`;
-        api.sendMessage(notice, settings.channels.test);
+        api.sendMessage(notice, settings.channels.log);
       }
     });
 }
@@ -111,7 +111,7 @@ async function start(acc) {
       ? `Logged in as ${acc.name}`
       : `Logged in as ${acc.name} (${acc.logins})`;
     console.log(loginMsg);
-    if (acc.logins > 1) api.sendMessage(loginMsg, settings.channels.test);
+    if (acc.logins > 1) api.sendMessage(loginMsg, settings.channels.log);
 
     //Message event
     let listenEmitter = api.listenMqtt(async (err, event) => {
@@ -232,7 +232,7 @@ async function start(acc) {
             }
           }
           let msg = { body: foundMsg.author.name + ' unsent a message:\n\n' + (foundMsg.content ? foundMsg.content : 'N/A') + (attachments.length > 0 ? '\n\nAttachments:\n' + attachments : ''), }
-          let thread = acc.unsentLogger.sendToThread ? event.threadID : settings.channels.test
+          let thread = acc.unsentLogger.sendToThread ? event.threadID : settings.channels.log
           if (acc.unsentLogger.enabled) api.sendMessage(msg, thread);
         }
       }
