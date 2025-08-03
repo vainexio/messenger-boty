@@ -1,5 +1,7 @@
 const express = require('express');
 const body_parser = require('body-parser');
+const cron = require('node-cron');
+const moment = require('moment-timezone');
 const fetch = require('node-fetch');
 const app = express();
 const fs = require("fs-extra");
@@ -16,38 +18,35 @@ const mongooseToken = process.env.MONGOOSE;
 app.use(express.json());
 
 //Listen
-let listener = app.listen(process.env.PORT, function() {
-   console.log('Not that it matters but your app is listening on port ' + listener.address().port);
+let listener = app.listen(process.env.PORT, function () {
+  console.log('Not that it matters but your app is listening on port ' + listener.address().port);
 });
 
 // Define your weekly class schedule
 const classSchedule = [
   // TELECOMMUNICATIONS & VOIP (COMPVOIP)
-  { day: 'Tuesday',   subject: 'Telecommunications & VOIP', section: 'BSIT231C', start: '13:00', end: '15:00', professor: 'Abigail T. Velasco' },
-  { day: 'Friday',    subject: 'Telecommunications & VOIP', section: 'BSIT231C', start: '13:00', end: '15:00', professor: 'Abigail T. Velasco' },
+  { day: 'Tuesday', subject: 'Telecommunications & VOIP', section: 'BSIT231C', start: '13:00', end: '15:00', professor: 'Abigail T. Velasco' },
+  { day: 'Friday', subject: 'Telecommunications & VOIP', section: 'BSIT231C', start: '13:00', end: '15:00', professor: 'Abigail T. Velasco' },
 
   // ELECTIVE 2 (ELECTV2)
-  { day: 'Monday',    subject: 'Elective 2',               section: 'BSIT231C', start: '09:00', end: '11:00', professor: 'Marco Paulo J. Burgos' },
-  { day: 'Thursday',  subject: 'Elective 2',               section: 'BSIT231C', start: '09:00', end: '11:00', professor: 'Marco Paulo J. Burgos' },
+  { day: 'Monday', subject: 'Elective 2', section: 'BSIT231C', start: '09:00', end: '11:00', professor: 'Marco Paulo J. Burgos' },
+  { day: 'Thursday', subject: 'Elective 2', section: 'BSIT231C', start: '09:00', end: '11:00', professor: 'Marco Paulo J. Burgos' },
 
   // ICT SERVICES MANAGEMENT (ICTSRV1)
-  { day: 'Tuesday',   subject: 'ICT Services Management', section: 'BSIT231C', start: '09:00', end: '11:00', professor: 'Kenneth Dynielle Lawas' },
-  { day: 'Friday',    subject: 'ICT Services Management', section: 'BSIT231C', start: '15:00', end: '17:00', professor: 'Kenneth Dynielle Lawas' },
+  { day: 'Tuesday', subject: 'ICT Services Management', section: 'BSIT231C', start: '09:00', end: '11:00', professor: 'Kenneth Dynielle Lawas' },
+  { day: 'Friday', subject: 'ICT Services Management', section: 'BSIT231C', start: '15:00', end: '17:00', professor: 'Kenneth Dynielle Lawas' },
 
   // INFORMATION SECURITY (INFOSEC)
-  { day: 'Monday',    subject: 'Information Security',     section: 'BSIT231C', start: '11:00', end: '13:00', professor: '' },
-  { day: 'Thursday',  subject: 'Information Security',     section: 'BSIT231C', start: '11:00', end: '13:00', professor: '' },
+  { day: 'Monday', subject: 'Information Security', section: 'BSIT231C', start: '11:00', end: '13:00', professor: '' },
+  { day: 'Thursday', subject: 'Information Security', section: 'BSIT231C', start: '11:00', end: '13:00', professor: '' },
 
   // SYSTEMS ANALYSIS & DETAILED DESIGN (MSYADD1)
   { day: 'Wednesday', subject: 'Systems Analysis & Detailed Design', section: 'BSIT231C', start: '11:00', end: '15:00', professor: 'Edison M. Esberto' },
-
-   // TEST SCHEDULE
-   { day: 'Sunday', subject: 'Test Subject', section: 'BSIT231C', start: '21:30', end: '22:00', professor: 'Bobay' },
 ];
 
 // Add an "online" flag: Mondays & Tuesdays are online, others are face-to-face
 classSchedule.forEach(entry => {
-  entry.mode = ['Monday','Tuesday'].includes(entry.day)
+  entry.mode = ['Monday', 'Tuesday'].includes(entry.day)
     ? 'online'
     : 'face-to-face';
 });
@@ -107,34 +106,34 @@ function scheduleNotifications(api) {
 }
 
 async function loadStuff() {
-  await mongoose.connect(mongooseToken,{keepAlive: true});
+  await mongoose.connect(mongooseToken, { keepAlive: true });
 }
 
 //FB Botting
 async function start(acc) {
   //Login event
-  login({appState: JSON.parse(fs.readFileSync('./'+acc.file+'.json', 'utf8'))}, async (err, api) => {
+  login({ appState: JSON.parse(fs.readFileSync('./' + acc.file + '.json', 'utf8')) }, async (err, api) => {
     //
     if (err) return console.log(err.error)
     //Variables
     acc.logins++
     let count = acc.logins
-    api.setOptions({listenEvents: true});
+    api.setOptions({ listenEvents: true });
     scheduleNotifications(api);
     //Logs
-    if (acc.logins === 1) console.log('Logged in as '+acc.name)
-    else api.sendMessage('Logged in as '+acc.name+' ('+acc.logins+')',settings.channels.test)
-    
+    if (acc.logins === 1) console.log('Logged in as ' + acc.name)
+    else api.sendMessage('Logged in as ' + acc.name + ' (' + acc.logins + ')', settings.channels.test)
+
     //Message event
     let listenEmitter = api.listenMqtt(async (err, event) => {
       //Close connection on error
       if (err) {
         if (typeof err === 'string' && err.includes('Connection closed.')) {
-          console.log('Logged out as '+acc.name)
+          console.log('Logged out as ' + acc.name)
           count === acc.logins ? (console.log('Restarting'), listenEmitter.stopListening(), start(acc)) : null
         }
-        
-        return console.error(acc.name+" error: "+err);
+
+        return console.error(acc.name + " error: " + err);
       }
       //Receive if the event is a message
       if (event.type === "message" || event.type === "message_reply") {
@@ -144,10 +143,10 @@ async function start(acc) {
         console.log(event)
         //
         let message = await methods.getMessage(api, event)
-        console.log(message.author.name+' ['+message.channel.name+' - '+message.channel.id+']: '+event.body)
+        console.log(message.author.name + ' [' + message.channel.name + ' - ' + message.channel.id + ']: ' + event.body)
         console.log(event.attachments)
         event.attachments[0]?.ID ? settings.stickers.registered.push(`\n"${event.attachments[0]?.ID}"`) : null
-        
+
         let hasPing = false
         event.mentions[acc.id] ? hasPing = true : event.type === 'message_reply' && event.messageReply.senderID === acc.id ? hasPing = true : event.body.toLowerCase().includes(acc.name) ? hasPing = true : null
         //
@@ -161,18 +160,18 @@ async function start(acc) {
                 mn.enabled = false
                 console.log('Disable Maintenance')
               } else {
-                return api.sendMessage('🔴 Bot Maintenance\n• Date: '+mn.day+'\n• Until: '+mn.until+':00 '+mn.state+'\n• Reason: '+mn.desc,event.threadID,event.messageID)
+                return api.sendMessage('🔴 Bot Maintenance\n• Date: ' + mn.day + '\n• Until: ' + mn.until + ':00 ' + mn.state + '\n• Reason: ' + mn.desc, event.threadID, event.messageID)
               }
             }
             //let message = await methods.getMessage(api, event)
             let foundTrigger = settings.presave.find(p => p.trigger.find(t => event.body.toLowerCase().includes(t)))
             if (foundTrigger && foundTrigger.run) {
-              let randomRespo = foundTrigger.response[getRandom(0,foundTrigger.response.length)]
-              api.sendMessage(randomRespo,event.threadID,event.messageID)
+              let randomRespo = foundTrigger.response[getRandom(0, foundTrigger.response.length)]
+              api.sendMessage(randomRespo, event.threadID, event.messageID)
               return;
             }
-            
-            let data = await AI.chatAI(event.body.toLowerCase().replace(/image:|@nicholas jace travious/g,''),event.body.toLowerCase().includes('image:') ? 'image' : 'chat',message.author,acc)
+
+            let data = await AI.chatAI(event.body.toLowerCase().replace(/image:|@nicholas jace travious/g, ''), event.body.toLowerCase().includes('image:') ? 'image' : 'chat', message.author, acc)
             !data.response.choices ? console.log(data) : null
             let firstTime = !settings.firstTime.find(f => f === event.threadID)
             if (firstTime) {
@@ -184,13 +183,13 @@ async function start(acc) {
               return;*/
             }
             if (data.response.error) {
-              api.setMessageReaction('😢',event.messageID)
-              api.sendMessage("⚠️  Unexpected error occurred.\nThe bot is currently filled with requests.",event.threadID,event.messageID) //+data.response.error.message
+              api.setMessageReaction('😢', event.messageID)
+              api.sendMessage("⚠️  Unexpected error occurred.\nThe bot is currently filled with requests.", event.threadID, event.messageID) //+data.response.error.message
             } else {
               if (data.type === 'image') {
                 let url = data.response.data[0].url
                 https.get(url, (res) => {
-                  api.sendMessage({attachment: res},event.threadID,event.messageID)
+                  api.sendMessage({ attachment: res }, event.threadID, event.messageID)
                 })
                 return;
               }
@@ -201,32 +200,32 @@ async function start(acc) {
                 found.messages.push(msg)
                 if (data.response.usage.total_tokens >= settings.AI.maxTokens) {
                   found.messages = []
-                  await api.setMessageReaction('😥',event.threadID)
+                  await api.setMessageReaction('😥', event.threadID)
                 }
               }
-              let randomStix = settings.stickers.randoms[getRandom(0,settings.stickers.randoms.length)]
-              
-              let filtered = settings.AI.filter(msg.content,acc)
+              let randomStix = settings.stickers.randoms[getRandom(0, settings.stickers.randoms.length)]
+
+              let filtered = settings.AI.filter(msg.content, acc)
               let textContent = filtered.replace(/<\/?[^>]+(>|$)/g, '');
               let linkRegex = /https:\/\/(media\.discordapp\.net|cdn\.discordapp\.com)\/[^\s,)]+/g;///https:\/\/media\.discordapp\.net\/[^\s,)]+/g;
               let links = textContent.match(linkRegex);
               let args = await methods.getArgs(filtered)
-              
-              if (!links) return api.sendMessage({body: filtered},event.threadID,event.messageID);
+
+              if (!links) return api.sendMessage({ body: filtered }, event.threadID, event.messageID);
               let attachments = []
               for (let i in links) {
                 let link = links[i]
                 let found = args.find(a => a.includes(link))
-                if (found) filtered = filtered.replace(found,'𝙎𝙚𝙚 𝘼𝙩𝙩𝙖𝙘𝙝𝙢𝙚𝙣𝙩 𝘽𝙚𝙡𝙤𝙬')
+                if (found) filtered = filtered.replace(found, '𝙎𝙚𝙚 𝘼𝙩𝙩𝙖𝙘𝙝𝙢𝙚𝙣𝙩 𝘽𝙚𝙡𝙤𝙬')
                 console.log(link)
                 https.get(link, (res) => {
-                  console.log('looping '+i)
+                  console.log('looping ' + i)
                   attachments.push(res)
                   if (attachments.length == links.length) {
-                    api.sendMessage({body: filtered, attachment: attachments},event.threadID,event.messageID)
+                    api.sendMessage({ body: filtered, attachment: attachments }, event.threadID, event.messageID)
                   }
                 })
-                }
+              }
               //
             }
           }
@@ -240,10 +239,10 @@ async function start(acc) {
           if (foundMsg.attachments.length > 0) {
             for (let i in foundMsg.attachments) {
               let file = foundMsg.attachments[i].url
-              attachments += 'File '+(Number(i)+1)+': '+file+'\n\n'
+              attachments += 'File ' + (Number(i) + 1) + ': ' + file + '\n\n'
             }
           }
-          let msg = { body: foundMsg.author.name+' unsent a message:\n\n'+(foundMsg.content ? foundMsg.content : 'N/A')+(attachments.length > 0 ? '\n\nAttachments:\n'+attachments : ''), }
+          let msg = { body: foundMsg.author.name + ' unsent a message:\n\n' + (foundMsg.content ? foundMsg.content : 'N/A') + (attachments.length > 0 ? '\n\nAttachments:\n' + attachments : ''), }
           let thread = acc.unsentLogger.sendToThread ? event.threadID : settings.channels.test
           if (acc.unsentLogger.enabled) api.sendMessage(msg, thread);
         }
