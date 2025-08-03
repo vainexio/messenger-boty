@@ -1,3 +1,28 @@
+const express = require('express');
+const body_parser = require('body-parser');
+const fetch = require('node-fetch');
+const app = express();
+const fs = require("fs-extra");
+const login = require("@dongdev/fca-unofficial");
+const https = require("https");
+const cors = require('cors');
+// Allow requests from all origins
+
+const { AI } = require('./storage/ai.js')
+const { settings } = require('./storage/settings.js')
+const { getRandom, getTime, getTime2, sleep, send } = require('./storage/wrap.js')
+const { methods } = require('./storage/method.js')
+const mongoose = require('mongoose');
+mongoose.set('strictQuery', false);
+const mongooseToken = process.env.MONGOOSE;
+
+app.use(express.json());
+
+//Listen
+let listener = app.listen(process.env.PORT, function() {
+   console.log('Not that it matters but your app is listening on port ' + listener.address().port);
+});
+//
 const cron = require('node-cron');
 const moment = require('moment-timezone');
 
