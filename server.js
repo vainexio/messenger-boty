@@ -22,7 +22,6 @@ app.use(express.json());
 let listener = app.listen(process.env.PORT, function() {
    console.log('Not that it matters but your app is listening on port ' + listener.address().port);
 });
-//
 const cron = require('node-cron');
 const moment = require('moment-timezone');
 
@@ -46,7 +45,7 @@ const classSchedule = [
 
   // SYSTEMS ANALYSIS & DETAILED DESIGN (MSYADD1)
   { day: 'Wednesday', subject: 'Systems Analysis & Detailed Design', section: 'BSIT231C', start: '11:00', end: '15:00', professor: 'Edison M. Esberto' },
-  { day: 'Sunday', subject: 'Systems Analysis & Detailed Design', section: 'BSIT231C', start: '21:40', end: '15:00', professor: 'Edison M. Esberto' },
+  { day: 'Sunday', subject: 'Systems Analysis & Detailed Design', section: 'BSIT231C', start: '21:52', end: '15:00', professor: 'Edison M. Esberto' },
 ];
 
 classSchedule.forEach(entry => {
