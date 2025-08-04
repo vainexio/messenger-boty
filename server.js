@@ -1,10 +1,8 @@
 const login = require("@dongdev/fca-unofficial");
 const body_parser = require('body-parser');
-const moment = require('moment-timezone');
 const mongoose = require('mongoose');
 const fetch = require('node-fetch');
 const express = require('express');
-const cron = require('node-cron');
 const fs = require("fs-extra");
 const https = require("https");
 const cors = require('cors');
@@ -14,6 +12,7 @@ const { getRandom, getTime, getTime2, sleep, send } = require('./storage/wrap.js
 const { settings } = require('./storage/settings.js');
 const { methods } = require('./storage/method.js');
 const { AI } = require('./storage/ai.js');
+const { scheduleNotifications, backfillReminders } = require('./storage/class-schedules.js');
 
 app.use(express.json());
 mongoose.set('strictQuery', false);
