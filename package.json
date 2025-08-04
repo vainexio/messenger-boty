@@ -10,6 +10,8 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "cheerio": "^1.1.2",
+    "openai": "^5.11.0",
     "@dongdev/fca-unofficial": "^1.0.20",
     "https": "^1.0.0",
     "express": "^4.19.2",
