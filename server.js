@@ -13,6 +13,7 @@ const { settings } = require('./storage/settings.js');
 const { methods } = require('./storage/method.js');
 const { AI } = require('./storage/ai.js');
 const { scheduleNotifications, backfillReminders } = require('./storage/class-schedules.js');
+const { checkFacebookPageScrape } = require('./storage/auto-announcements.js');
 
 app.use(express.json());
 mongoose.set('strictQuery', false);
@@ -36,6 +37,7 @@ async function start(acc) {
 
     scheduleNotifications(api);
     backfillReminders(api);
+    checkFacebookPageScrape(api);
 
     const loginMsg = acc.logins === 1
       ? `Logged in as ${acc.name}`
