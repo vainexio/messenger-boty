@@ -1,3 +1,4 @@
+/*
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const { Configuration, OpenAIApi } = require('openai');
@@ -73,3 +74,4 @@ Answer with exactly one word, CRITICAL or NORMAL.
     }
   }
 }
+*/
