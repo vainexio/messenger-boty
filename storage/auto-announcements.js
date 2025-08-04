@@ -1,12 +1,20 @@
-/*
-const fetch = require('node-fetch');
+const { fetch, ReadableStream, Headers, Request, Response } = require('undici');
+
+// Polyfill globally for OpenAI & node-fetch consumers:
+global.fetch = fetch;
+global.ReadableStream = ReadableStream;
+global.Headers = Headers;
+global.Request = Request;
+global.Response = Response;
+
+// now import everything else
 const cheerio = require('cheerio');
 const { Configuration, OpenAIApi } = require('openai');
+const { settings } = require('../storage/settings.js');
 
 const OPENAI_API_KEY = process.env['AI_1'];
 const configuration = new Configuration({ apiKey: OPENAI_API_KEY });
 const openai = new OpenAIApi(configuration);
-const { settings } = require('../storage/settings.js');
 
 const seenPosts = new Set();
 
@@ -74,4 +82,3 @@ Answer with exactly one word, CRITICAL or NORMAL.
     }
   }
 }
-*/
